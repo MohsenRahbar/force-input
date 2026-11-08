@@ -1,0 +1,21 @@
+
+{
+  "name": "force-input",
+  "version": "1.0.0",
+  "description": "Lightweight JavaScript input validation and formatting library",
+  "main": "dist/force-input.js",
+  "unpkg": "dist/force-input.min.js",
+  "jsdelivr": "dist/force-input.min.js",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "npm run build:dev && npm run build:min",
+    "build:dev": "esbuild src/force-input.js --bundle --format=iife --target=es2018 --outfile=dist/force-input.js",
+    "build:min": "esbuild src/force-input.js --bundle --format=iife --target=es2018 --minify --outfile=dist/force-input.min.js"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0"
+  },
+  "license": "MIT"
+}
