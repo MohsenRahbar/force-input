@@ -2,22 +2,22 @@
   "name": "force-input",
   "version": "1.0.0",
   "description": "Lightweight JavaScript input validation and normalization for Persian, English, numeric, and date inputs",
-  "main": "dist/force-input.js",
+  "browser": "dist/force-input.js",
   "unpkg": "dist/force-input.min.js",
   "jsdelivr": "dist/force-input.min.js",
   "files": [
     "dist"
   ],
+  "sideEffects": true,
   "scripts": {
     "build": "npm run build:dev && npm run build:min",
     "build:dev": "esbuild src/force-input.js --bundle --format=iife --target=es2018 --outfile=dist/force-input.js",
-    "build:min": "esbuild src/force-input.js --bundle --format=iife --target=es2018 --minify --outfile=dist/force-input.min.js"
+    "build:min": "esbuild src/force-input.js --bundle --format=iife --target=es2018 --minify --outfile=dist/force-input.min.js",
+    "prepublishOnly": "npm run build"
   },
   "devDependencies": {
-    "esbuild": "^0.25.0"
-  },
-  "license": "MIT",
-  "dependencies": {
+    "esbuild": "^0.25.0",
     "jalaali-js": "^2.0.1"
-  }
+  },
+  "license": "MIT"
 }

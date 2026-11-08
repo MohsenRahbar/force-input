@@ -340,3 +340,6 @@ Browser compatibility should be verified against the project's supported browser
 ## Dependencies
 
 - [jalaali-js](https://www.npmjs.com/package/jalaali-js) — Jalali date validation and conversion utilities.
+
+## License
+MIT
