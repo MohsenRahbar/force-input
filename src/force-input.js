@@ -40,7 +40,9 @@ import * as jalaali from "jalaali-js";
         "en-force",
         "num-force",
         "fa-date",
-        "en-date"
+        "en-date",
+        "fa-letter-force-res",
+        "en-letter-force-res"
     ];
 
     // -----------------------------
@@ -93,17 +95,25 @@ import * as jalaali from "jalaali-js";
         );
     }
 
-    function getMessage(mode) {
-        if (mode && mode.startsWith("fa-force")) {
-            return messages.fa;
-        }
-
-        if (mode && mode.startsWith("en-force")) {
-            return messages.en;
-        }
-
-        return messages.digits;
+function getMessage(mode) {
+    if (
+        mode === "fa-letter-force-res" ||
+        mode === "fa-force" ||
+        mode === "fa-force-res"
+    ) {
+        return messages.fa;
     }
+
+    if (
+        mode === "en-letter-force-res" ||
+        mode === "en-force" ||
+        mode === "en-force-res"
+    ) {
+        return messages.en;
+    }
+
+    return messages.digits;
+}
 
     // -----------------------------
     // Validation
@@ -111,6 +121,15 @@ import * as jalaali from "jalaali-js";
 
     function validateCharacter(char, mode) {
         // Numeric modes
+        // Persian letters and spaces only
+        if (mode === "fa-letter-force-res") {
+            return /^[\u0621-\u063A\u0641-\u064A\u067E\u0686\u0698\u06A9\u06AF\u06BE\u06CC ]$/u.test(char);
+        }
+
+        // English letters and spaces only
+        if (mode === "en-letter-force-res") {
+            return /^[A-Za-z ]$/.test(char);
+        }
         if (
             mode === "num-force" ||
             mode.endsWith("-res")
