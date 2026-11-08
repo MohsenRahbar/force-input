@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
@@ -58,7 +57,7 @@
             class="fa-force"
             placeholder="متن فارسی و اعداد انگلیسی"
         >
-        <div class="hint">فارسی و اعداد مجاز؛ حروف انگلیسی غیرمجاز</div>
+        <div class="hint">فارسی و اعداد انگلیسی مجاز؛ حروف انگلیسی غیرمجاز</div>
     </div>
 
     <div class="test-item">
@@ -67,9 +66,9 @@
             id="fa-res"
             type="text"
             class="fa-force-res"
-            placeholder="فقط عدد"
+            placeholder="فقط حروف فارسی"
         >
-        <div class="hint">فقط اعداد؛ اعداد فارسی نیز به انگلیسی تبدیل می‌شوند</div>
+        <div class="hint">فقط حروف فارسی و فاصله؛ عدد و علامت غیرمجاز</div>
     </div>
 
     <div class="test-item">
@@ -89,9 +88,9 @@
             id="en-res"
             type="text"
             class="en-force-res"
-            placeholder="Only digits"
+            placeholder="English letters only"
         >
-        <div class="hint">فقط اعداد</div>
+        <div class="hint">فقط حروف انگلیسی و فاصله؛ عدد و علامت غیرمجاز</div>
     </div>
 
     <div class="test-item">
@@ -102,7 +101,7 @@
             class="num-force"
             placeholder="Only digits"
         >
-        <div class="hint">فقط اعداد</div>
+        <div class="hint">فقط اعداد انگلیسی؛ اعداد فارسی نیز تبدیل می‌شوند</div>
     </div>
 
     <div class="test-item">
@@ -113,7 +112,7 @@
             class="num-force-res"
             placeholder="Only digits"
         >
-        <div class="hint">فقط اعداد</div>
+        <div class="hint">فقط اعداد انگلیسی؛ اعداد فارسی نیز تبدیل می‌شوند</div>
     </div>
 
     <div class="test-item">
@@ -126,36 +125,33 @@
         >
         <div class="hint">حداکثر ۱۰ کاراکتر</div>
     </div>
+
     <div class="test-item">
-    <label for="fa-date">fa-date - تاریخ شمسی</label>
-    <input
-        id="fa-date"
-        type="text"
-        class="fa-date"
-        placeholder="1405/08/17"
-        maxlength="10"
-        inputmode="numeric"
-    >
-    <div class="hint">فرمت: YYYY/MM/DD - حداقل تاریخ: 1278/10/11</div>
-</div>
+        <label for="fa-date">fa-date - تاریخ شمسی</label>
+        <input
+            id="fa-date"
+            type="text"
+            class="fa-date"
+            placeholder="1405/08/17"
+            maxlength="10"
+            inputmode="numeric"
+        >
+        <div class="hint">فرمت: YYYY/MM/DD - حداقل تاریخ: 1278/10/11</div>
+    </div>
 
-<div class="test-item">
-    <label for="en-date">en-date - تاریخ میلادی</label>
-    <input
-        id="en-date"
-        type="text"
-        class="en-date"
-        placeholder="2026/11/08"
-        maxlength="10"
-        inputmode="numeric"
-    >
-    <div class="hint">فرمت: YYYY/MM/DD - حداقل تاریخ: 1900/01/01</div>
-    <input type="text" class="fa-letter-force-res"
-        placeholder="فقط حروف فارسی">
+    <div class="test-item">
+        <label for="en-date">en-date - تاریخ میلادی</label>
+        <input
+            id="en-date"
+            type="text"
+            class="en-date"
+            placeholder="2026/11/08"
+            maxlength="10"
+            inputmode="numeric"
+        >
+        <div class="hint">فرمت: YYYY/MM/DD - حداقل تاریخ: 1900/01/01</div>
+    </div>
 
-    <input type="text" class="en-letter-force-res"
-        placeholder="English letters only">
-</div>
     <script src="../dist/force-input.js"></script>
 
 </body>

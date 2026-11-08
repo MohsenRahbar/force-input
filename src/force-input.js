@@ -120,19 +120,20 @@ function getMessage(mode) {
     // -----------------------------
 
     function validateCharacter(char, mode) {
-        // Numeric modes
         // Persian letters and spaces only
-        if (mode === "fa-letter-force-res") {
+        if (mode === "fa-force-res") {
             return /^[\u0621-\u063A\u0641-\u064A\u067E\u0686\u0698\u06A9\u06AF\u06BE\u06CC ]$/u.test(char);
         }
 
         // English letters and spaces only
-        if (mode === "en-letter-force-res") {
+        if (mode === "en-force-res") {
             return /^[A-Za-z ]$/.test(char);
         }
+
+        // Numeric modes
         if (
             mode === "num-force" ||
-            mode.endsWith("-res")
+            mode === "num-force-res"
         ) {
             return /^[0-9]$/.test(char);
         }

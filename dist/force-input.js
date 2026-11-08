@@ -244,13 +244,13 @@
       return messages.digits;
     }
     function validateCharacter(char, mode) {
-      if (mode === "fa-letter-force-res") {
+      if (mode === "fa-force-res") {
         return /^[\u0621-\u063A\u0641-\u064A\u067E\u0686\u0698\u06A9\u06AF\u06BE\u06CC ]$/u.test(char);
       }
-      if (mode === "en-letter-force-res") {
+      if (mode === "en-force-res") {
         return /^[A-Za-z ]$/.test(char);
       }
-      if (mode === "num-force" || mode.endsWith("-res")) {
+      if (mode === "num-force" || mode === "num-force-res") {
         return /^[0-9]$/.test(char);
       }
       if (mode === "fa-force") {
