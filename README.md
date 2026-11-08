@@ -8,6 +8,7 @@ A lightweight JavaScript library for input validation and normalization.
 
 - Persian text input with English digits
 - English text input
+- Persian-only and English-only text fields
 - Numeric-only input
 - Persian and Arabic digit normalization
 - Maximum character length
@@ -15,6 +16,7 @@ A lightweight JavaScript library for input validation and normalization.
 - Gregorian date validation
 - Input validation and normalization
 - Customizable error messages
+- Automatic initialization
 - Lightweight browser-based API
 
 ## Installation
@@ -25,37 +27,39 @@ Install using npm:
 npm install force-input
 ```
 
-Build the library:
+## Usage
 
-```bash
-npm run build
-```
+### Using a script tag
 
-Or include the minified build directly in your HTML:
+Include the minified build in your HTML:
 
 ```html
-<script src="https://unpkg.com/force-input/dist/force-input.min.js"></script>
+<script src="https://unpkg.com/force-input@1.0.0/dist/force-input.min.js"></script>
 ```
 
-The library exposes a global object named `ForceInput`.
+The library exposes a global object named `ForceInput` and automatically initializes supported inputs when loaded.
 
-## Quick Start
-
-Add a supported class to an input:
-
-```html
-<input type="text" class="fa-force">
-<input type="text" class="num-force">
-<input type="text" class="en-force">
-```
-
-Initialize the library:
+### Using the local build
 
 ```html
 <script src="dist/force-input.min.js"></script>
 ```
 
-The library automatically initializes when loaded.
+## Quick Start
+
+Add one of the supported classes to your input elements:
+
+```html
+<input type="text" class="fa-force" placeholder="نام">
+
+<input type="text" class="en-force" placeholder="Name">
+
+<input type="text" class="num-force" placeholder="Number">
+
+<input type="text" class="fa-date" placeholder="1405/01/15">
+```
+
+The library automatically detects and initializes these inputs.
 
 You can also initialize it manually:
 
@@ -69,21 +73,22 @@ ForceInput.init();
 
 | Class | Behavior |
 |---|---|
-| `fa-force` | Persian letters and English digits |
-| `fa-force-res` | Numeric-only input |
+| `fa-force` | Persian letters, English digits and supported punctuation |
+| `fa-force-res` | Persian letters and ordinary spaces only |
 
-Persian and Arabic digits are converted to English digits.
-
-English letters are rejected in `fa-force`.
+- Persian and Arabic digits are converted to English digits in `fa-force`.
+- English letters are rejected in `fa-force`.
+- `fa-force-res` does not accept digits or punctuation.
 
 ### English text
 
 | Class | Behavior |
 |---|---|
 | `en-force` | English letters, digits, spaces and common punctuation |
-| `en-force-res` | Numeric-only input |
+| `en-force-res` | English letters and ordinary spaces only |
 
-Persian and Arabic letters are rejected in `en-force`.
+- Persian and Arabic letters are rejected in `en-force`.
+- `en-force-res` does not accept digits or punctuation.
 
 ### Numeric input
 
@@ -98,16 +103,23 @@ Persian and Arabic digits are normalized to English digits.
 
 Use `len-N` to set the maximum number of characters.
 
-Example:
+Examples:
 
 ```html
-<input type="text" class="fa-force len-10">
-<input type="text" class="num-force len-5">
+<input type="text" class="fa-force len-50">
+
+<input type="text" class="num-force len-10">
+
+<input type="text" class="en-force len-30">
 ```
 
-The library prevents input that exceeds the configured length where possible. Deletion remains available.
+Behavior:
 
-If multiple `len-N` classes are present, the library's handling of that case should be checked against the implementation.
+- Prevents input that exceeds the configured length where possible.
+- Allows deletion even when the input has reached its limit.
+- Normalizes the value after input as a fallback.
+
+Use one `len-N` class per input.
 
 ### Date input
 
@@ -116,20 +128,30 @@ If multiple `len-N` classes are present, the library's handling of that case sho
 | `fa-date` | Jalali `YYYY/MM/DD` | `1278/10/11` |
 | `en-date` | Gregorian `YYYY/MM/DD` | `1900/01/01` |
 
-Example:
+Examples:
 
 ```html
-<input type="text" class="fa-date" placeholder="1405/01/15">
-<input type="text" class="en-date" placeholder="2026/04/04">
+<input
+    type="text"
+    class="fa-date"
+    placeholder="1405/01/15"
+>
+
+<input
+    type="text"
+    class="en-date"
+    placeholder="2026/04/04"
+>
 ```
 
 Date input behavior:
 
 - Persian and Arabic digits are converted to English digits.
 - Only digits and `/` are accepted.
-- The maximum date input length is 10 characters.
-- Incomplete dates are not shown as invalid during normal input.
+- The maximum input length is 10 characters.
+- Incomplete dates do not show a date validation error during normal input.
 - Complete but invalid dates remain visible and display an error.
+- Calendar validity and minimum date are checked.
 
 ## Public API
 
@@ -137,9 +159,7 @@ All public methods are available through the global `ForceInput` object.
 
 ### `ForceInput.init(root)`
 
-Initializes the library and attaches event listeners.
-
-It also processes supported inputs inside the specified root.
+Initializes the library and attaches event listeners to supported inputs.
 
 ```js
 ForceInput.init();
@@ -173,7 +193,7 @@ ForceInput.apply(input);
 
 ### `ForceInput.refresh(root)`
 
-Processes inputs again inside the specified root.
+Processes supported inputs again inside the specified root.
 
 Useful when new inputs are added dynamically.
 
@@ -193,7 +213,7 @@ Returns the `ForceInput` object.
 
 ### `ForceInput.validate(element)`
 
-Validates an input without relying only on the visible error state.
+Validates an input programmatically.
 
 ```js
 const input = document.querySelector(".fa-date");
@@ -213,7 +233,10 @@ Return structure:
 }
 ```
 
-For invalid values, `valid` is `false` and `message` contains the relevant validation message.
+For invalid values:
+
+- `valid` is `false`.
+- `message` contains the relevant validation message.
 
 For date inputs, incomplete dates are considered invalid by this programmatic validation method.
 
@@ -229,15 +252,13 @@ const value = ForceInput.getValue(input);
 console.log(value);
 ```
 
-This method returns a normalized value without requiring the caller to read the raw input value.
-
 Returns `null` for unsupported elements.
 
 ### `ForceInput.config(options)`
 
 Updates library configuration.
 
-Currently, custom error messages can be provided through the `messages` property.
+Custom error messages can be provided through the `messages` property.
 
 ```js
 ForceInput.config({
@@ -247,7 +268,7 @@ ForceInput.config({
 });
 ```
 
-Custom message keys and their exact names should be taken from the library's current source code.
+Message keys depend on the library's configured message definitions.
 
 Returns the `ForceInput` object.
 
@@ -273,57 +294,111 @@ const result = ForceInput.toEnglishDigits("۱۲۳٤٥");
 console.log(result); // "12345"
 ```
 
-## Example
+## Complete Example
 
 ```html
-<form id="my-form">
-    <input
-        type="text"
-        class="fa-force"
-        placeholder="نام"
-    >
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Force Input Example</title>
+</head>
+<body>
 
-    <input
-        type="text"
-        class="num-force len-10"
-        placeholder="شماره"
-    >
+    <form id="my-form">
 
-    <input
-        type="text"
-        class="fa-date"
-        placeholder="1405/01/15"
-    >
+        <input
+            type="text"
+            class="fa-force"
+            placeholder="نام"
+        >
 
-    <button type="submit">Submit</button>
-</form>
+        <input
+            type="text"
+            class="fa-force-res"
+            placeholder="نام فارسی"
+        >
 
-<script src="dist/force-input.min.js"></script>
+        <input
+            type="text"
+            class="en-force"
+            placeholder="Name"
+        >
 
-<script>
-    const form = document.querySelector("#my-form");
+        <input
+            type="text"
+            class="en-force-res"
+            placeholder="English name"
+        >
 
-    form.addEventListener("submit", function (event) {
-        const inputs = form.querySelectorAll(
-            ".fa-force, .num-force, .fa-date"
-        );
+        <input
+            type="text"
+            class="num-force len-10"
+            placeholder="Number"
+        >
 
-        let isValid = true;
+        <input
+            type="text"
+            class="fa-date"
+            placeholder="1405/01/15"
+        >
 
-        inputs.forEach(function (input) {
-            const result = ForceInput.validate(input);
+        <input
+            type="text"
+            class="en-date"
+            placeholder="2026/04/04"
+        >
 
-            if (!result.valid) {
-                isValid = false;
+        <button type="submit">Submit</button>
+
+    </form>
+
+    <script src="dist/force-input.min.js"></script>
+
+    <script>
+        const form = document.querySelector("#my-form");
+
+        form.addEventListener("submit", function (event) {
+
+            const inputs = form.querySelectorAll(
+                ".fa-force, .fa-force-res, " +
+                ".en-force, .en-force-res, " +
+                ".num-force, .num-force-res, " +
+                ".fa-date, .en-date"
+            );
+
+            let isValid = true;
+
+            inputs.forEach(function (input) {
+
+                const result = ForceInput.validate(input);
+
+                if (!result.valid) {
+                    isValid = false;
+                }
+
+            });
+
+            if (!isValid) {
+                event.preventDefault();
             }
-        });
 
-        if (!isValid) {
-            event.preventDefault();
-        }
-    });
-</script>
+        });
+    </script>
+
+</body>
+</html>
 ```
+
+## Important Notes
+
+- `force-input` works with HTML input elements.
+- Input validation is performed on the client side.
+- Client-side validation does not replace server-side validation.
+- Always validate important data on your backend.
+- The library automatically initializes supported inputs when its script is loaded.
+- Use `ForceInput.refresh()` when adding new supported inputs dynamically.
 
 ## Browser Support
 
@@ -335,11 +410,12 @@ console.log(result); // "12345"
 - `compositionend`
 - `classList`
 
-Browser compatibility should be verified against the project's supported browser matrix.
+Browser compatibility should be verified against the browsers targeted by your project.
 
 ## Dependencies
 
 - [jalaali-js](https://www.npmjs.com/package/jalaali-js) — Jalali date validation and conversion utilities.
 
 ## License
-MIT
+
+MIT License.

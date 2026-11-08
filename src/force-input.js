@@ -188,6 +188,82 @@ function getMessage(mode) {
 // Date validation
 // -----------------------------
 
+function isPossibleDateInput(value, mode) {
+    const parts = value.split("/");
+
+    if (parts.length > 3) return false;
+
+    const [year = "", month = "", day = ""] = parts;
+
+    if (
+        year.length > 4 ||
+        month.length > 2 ||
+        day.length > 2
+    ) {
+        return false;
+    }
+
+    // Validate month
+    if (month.length === 1 && Number(month) > 1) {
+        return false;
+    }
+
+    if (month.length === 2) {
+        const m = Number(month);
+
+        if (m < 1 || m > 12) return false;
+    }
+
+    // Day cannot be entered without a complete month
+    if (day.length && month.length !== 2) {
+        return false;
+    }
+
+    if (!day.length) return true;
+
+    const m = Number(month);
+    const d = Number(day);
+    const y = Number(year);
+
+    let maxDay;
+
+    if (mode === "fa-date") {
+        if (m <= 6) {
+            maxDay = 31;
+        } else if (m <= 11) {
+            maxDay = 30;
+        } else {
+            maxDay =
+                year.length === 4 &&
+                isValidJalaaliDate(y, 12, 30)
+                    ? 30
+                    : 29;
+        }
+    } else {
+        const isLeapYear =
+            y % 400 === 0 ||
+            (y % 4 === 0 && y % 100 !== 0);
+
+        const daysInMonth = [
+            31,
+            isLeapYear ? 29 : 28,
+            31, 30, 31, 30,
+            31, 31, 30, 31, 30, 31
+        ];
+
+        maxDay = year.length === 4
+            ? daysInMonth[m - 1]
+            : (m === 2 ? 29 : daysInMonth[m - 1]);
+    }
+
+    // Allow valid first digit while typing
+    if (day.length === 1) {
+        return d <= 3;
+    }
+
+    return d >= 1 && d <= maxDay;
+}
+
 function normalizeDate(value) {
     value = toEnglishDigits(value);
 
@@ -379,10 +455,17 @@ function validateGregorianDate(value) {
     // -----------------------------
 
     function apply(element) {
+        
         if (!isInputElement(element)) {
             return;
         }
-
+        if (!isPossibleDateInput(element.value, mode)) {
+            showError(
+                element,
+                "ماه یا روز وارد شده معتبر نیست."
+            );
+            return;
+        }
         const mode = getMode(element);
 
         if (!mode) {
@@ -542,6 +625,26 @@ function handleBeforeInput(event) {
 
         return;
     }
+    if (isDateMode) {
+    const start = element.selectionStart ?? element.value.length;
+    const end = element.selectionEnd ?? start;
+
+    const nextValue =
+        element.value.slice(0, start) +
+        normalized.value +
+        element.value.slice(end);
+
+    if (!isPossibleDateInput(nextValue, mode)) {
+        event.preventDefault();
+
+        showError(
+            element,
+            "ماه یا روز وارد شده معتبر نیست."
+        );
+
+        return;
+    }
+}
 
     const start = element.selectionStart ?? element.value.length;
     const end = element.selectionEnd ?? start;
