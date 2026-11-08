@@ -4,26 +4,154 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ForceInput Test</title>
+    <title>ForceInput Behavior Tests</title>
+
+    <style>
+        body {
+            font-family: Tahoma, sans-serif;
+            max-width: 650px;
+            margin: 40px auto;
+            padding: 0 16px;
+            line-height: 1.8;
+        }
+
+        .test-item {
+            margin-bottom: 22px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 15px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #2563eb;
+        }
+
+        .hint {
+            color: #666;
+            font-size: 12px;
+        }
+    </style>
 </head>
+
 <body>
 
-    <h3>Persian</h3>
-    <input class="fa-force len-30" placeholder="متن فارسی">
+    <h2>ForceInput - Behavior Tests</h2>
 
-    <h3>Persian Restricted</h3>
-    <input class="fa-force-res len-10" placeholder="فقط عدد">
+    <div class="test-item">
+        <label for="fa">fa-force</label>
+        <input
+            id="fa"
+            type="text"
+            class="fa-force"
+            placeholder="متن فارسی و اعداد انگلیسی"
+        >
+        <div class="hint">فارسی و اعداد مجاز؛ حروف انگلیسی غیرمجاز</div>
+    </div>
 
-    <h3>English</h3>
-    <input class="en-force len-30" placeholder="English text">
+    <div class="test-item">
+        <label for="fa-res">fa-force-res</label>
+        <input
+            id="fa-res"
+            type="text"
+            class="fa-force-res"
+            placeholder="فقط عدد"
+        >
+        <div class="hint">فقط اعداد؛ اعداد فارسی نیز به انگلیسی تبدیل می‌شوند</div>
+    </div>
 
-    <h3>English Restricted</h3>
-    <input class="en-force-res len-10" placeholder="Digits only">
+    <div class="test-item">
+        <label for="en">en-force</label>
+        <input
+            id="en"
+            type="text"
+            class="en-force"
+            placeholder="English text and numbers"
+        >
+        <div class="hint">حروف انگلیسی، اعداد و علائم مجاز</div>
+    </div>
 
-    <h3>Number</h3>
-    <input class="num-force len-11" placeholder="Phone number">
+    <div class="test-item">
+        <label for="en-res">en-force-res</label>
+        <input
+            id="en-res"
+            type="text"
+            class="en-force-res"
+            placeholder="Only digits"
+        >
+        <div class="hint">فقط اعداد</div>
+    </div>
 
-    <script src="../src/force-input.js"></script>
+    <div class="test-item">
+        <label for="num">num-force</label>
+        <input
+            id="num"
+            type="text"
+            class="num-force"
+            placeholder="Only digits"
+        >
+        <div class="hint">فقط اعداد</div>
+    </div>
+
+    <div class="test-item">
+        <label for="num-res">num-force-res</label>
+        <input
+            id="num-res"
+            type="text"
+            class="num-force-res"
+            placeholder="Only digits"
+        >
+        <div class="hint">فقط اعداد</div>
+    </div>
+
+    <div class="test-item">
+        <label for="length">en-force len-10</label>
+        <input
+            id="length"
+            type="text"
+            class="en-force len-10"
+            placeholder="Maximum 10 characters"
+        >
+        <div class="hint">حداکثر ۱۰ کاراکتر</div>
+    </div>
+    <div class="test-item">
+    <label for="fa-date">fa-date - تاریخ شمسی</label>
+    <input
+        id="fa-date"
+        type="text"
+        class="fa-date"
+        placeholder="1405/08/17"
+        maxlength="10"
+        inputmode="numeric"
+    >
+    <div class="hint">فرمت: YYYY/MM/DD - حداقل تاریخ: 1278/10/11</div>
+</div>
+
+<div class="test-item">
+    <label for="en-date">en-date - تاریخ میلادی</label>
+    <input
+        id="en-date"
+        type="text"
+        class="en-date"
+        placeholder="2026/11/08"
+        maxlength="10"
+        inputmode="numeric"
+    >
+    <div class="hint">فرمت: YYYY/MM/DD - حداقل تاریخ: 1900/01/01</div>
+</div>
+    <script src="../dist/force-input.js"></script>
 
 </body>
 </html>

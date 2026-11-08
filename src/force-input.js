@@ -1,8 +1,15 @@
+import * as jalaali from "jalaali-js";
+
 
 (function (window, document) {
     "use strict";
 
     const ForceInput = {};
+    const isValidJalaaliDate = jalaali.isValidJalaaliDate;
+    const toJalaali = jalaali.toJalaali;
+    // -----------------------------
+    // Configuration
+    // -----------------------------
 
     const DEFAULT_MESSAGES = {
         fa: "لطفاً فقط حروف فارسی وارد کنید.",
@@ -23,7 +30,7 @@
         "٨": "8", "٩": "9"
     };
 
-    const DIGIT_REGEX = /[0-9۰-۹٠-٩]/g;
+    const DIGIT_REGEX = /[۰-۹٠-٩]/g;
 
     const MODES = [
         "fa-force-res",
@@ -31,7 +38,9 @@
         "num-force-res",
         "fa-force",
         "en-force",
-        "num-force"
+        "num-force",
+        "fa-date",
+        "en-date"
     ];
 
     // -----------------------------
@@ -49,6 +58,7 @@
                 found,
                 element
             );
+
             return null;
         }
 
@@ -56,19 +66,11 @@
     }
 
     function toEnglishDigits(value) {
-        return value.replace(DIGIT_REGEX, char => {
-            if (DIGIT_MAP[char]) {
-                return DIGIT_MAP[char];
-            }
-
-            return char;
-        });
+        return value.replace(DIGIT_REGEX, char => DIGIT_MAP[char]);
     }
 
     function getMaxLength(element) {
-        const classes = [...element.classList];
-
-        const limits = classes
+        const limits = [...element.classList]
             .map(name => name.match(/^len-(\d+)$/))
             .filter(Boolean)
             .map(match => Number(match[1]));
@@ -78,10 +80,17 @@
                 "ForceInput: Multiple length classes:",
                 element
             );
+
             return null;
         }
 
         return limits.length ? limits[0] : null;
+    }
+
+    function hasLengthClass(element) {
+        return [...element.classList].some(name =>
+            /^len-\d+$/.test(name)
+        );
     }
 
     function getMessage(mode) {
@@ -101,8 +110,7 @@
     // -----------------------------
 
     function validateCharacter(char, mode) {
-
-        // All numeric modes
+        // Numeric modes
         if (
             mode === "num-force" ||
             mode.endsWith("-res")
@@ -124,8 +132,6 @@
     }
 
     function normalize(value, mode, maxLength) {
-
-        // Convert Persian and Arabic digits first
         value = toEnglishDigits(value);
 
         const characters = Array.from(value);
@@ -135,7 +141,6 @@
         let tooLong = false;
 
         for (const char of characters) {
-
             if (!validateCharacter(char, mode)) {
                 invalid = true;
                 continue;
@@ -160,11 +165,134 @@
     }
 
     // -----------------------------
-    // Error message
+// Date validation
+// -----------------------------
+
+function normalizeDate(value) {
+    value = toEnglishDigits(value);
+
+    let result = "";
+    let invalid = false;
+
+    for (const char of Array.from(value)) {
+        if (/^[0-9/]$/.test(char)) {
+            result += char;
+        } else {
+            invalid = true;
+        }
+    }
+
+    return {
+        value: result,
+        invalid
+    };
+}
+
+function validateJalaliDate(value) {
+    const normalized = normalizeDate(value);
+    value = normalized.value;
+
+    // Incomplete date
+    if (value.length < 10) {
+        return {
+            complete: false,
+            valid: false,
+            invalid: normalized.invalid
+        };
+    }
+
+    // Expected format: YYYY/MM/DD
+    if (!/^\d{4}\/\d{2}\/\d{2}$/.test(value)) {
+        return {
+            complete: true,
+            valid: false,
+            invalid: normalized.invalid
+        };
+    }
+
+    const [year, month, day] = value.split("/").map(Number);
+
+    const validCalendarDate = isValidJalaaliDate(
+        year,
+        month,
+        day
+    );
+
+    // Minimum date: 1278/10/11
+    const isAfterMinimum =
+        year > 1278 ||
+        (year === 1278 && month > 10) ||
+        (year === 1278 && month === 10 && day >= 11);
+
+    return {
+        complete: true,
+        valid: validCalendarDate && isAfterMinimum && !normalized.invalid,
+        invalid: normalized.invalid
+    };
+}
+
+function validateGregorianDate(value) {
+    const normalized = normalizeDate(value);
+    value = normalized.value;
+
+    // Incomplete date
+    if (value.length < 10) {
+        return {
+            complete: false,
+            valid: false,
+            invalid: normalized.invalid
+        };
+    }
+
+    // Expected format: YYYY/MM/DD
+    if (!/^\d{4}\/\d{2}\/\d{2}$/.test(value)) {
+        return {
+            complete: true,
+            valid: false,
+            invalid: normalized.invalid
+        };
+    }
+
+    const [year, month, day] = value.split("/").map(Number);
+
+    const isLeapYear =
+        year % 400 === 0 ||
+        (year % 4 === 0 && year % 100 !== 0);
+
+    const daysInMonth = [
+        31,
+        isLeapYear ? 29 : 28,
+        31,
+        30,
+        31,
+        30,
+        31,
+        31,
+        30,
+        31,
+        30,
+        31
+    ];
+
+    const validCalendarDate =
+        year >= 1900 &&
+        month >= 1 &&
+        month <= 12 &&
+        day >= 1 &&
+        day <= daysInMonth[month - 1];
+
+    return {
+        complete: true,
+        valid: validCalendarDate && !normalized.invalid,
+        invalid: normalized.invalid
+    };
+}
+
+    // -----------------------------
+    // Error handling
     // -----------------------------
 
     function getErrorElement(element) {
-
         let error = element.nextElementSibling;
 
         if (
@@ -183,7 +311,6 @@
         error.style.color = "#dc2626";
         error.style.fontSize = "12px";
         error.style.marginTop = "5px";
-        error.style.display = "block";
 
         element.insertAdjacentElement("afterend", error);
 
@@ -210,27 +337,94 @@
     }
 
     // -----------------------------
+    // Element helpers
+    // -----------------------------
+
+    function isInputElement(element) {
+        return (
+            element instanceof HTMLInputElement ||
+            element instanceof HTMLTextAreaElement
+        );
+    }
+
+    function isSupported(element) {
+        return (
+            isInputElement(element) &&
+            getMode(element) !== null
+        );
+    }
+
+    // -----------------------------
     // Main processor
     // -----------------------------
 
     function apply(element) {
-
-        if (
-            !(element instanceof HTMLInputElement) &&
-            !(element instanceof HTMLTextAreaElement)
-        ) {
+        if (!isInputElement(element)) {
             return;
         }
 
         const mode = getMode(element);
 
-        if (!mode) return;
+        if (!mode) {
+            return;
+        }
+        // Date inputs
+if (mode === "fa-date" || mode === "en-date") {
+    const originalValue = element.value;
+    const cursorPosition =
+        element.selectionStart ?? originalValue.length;
+
+    const normalized = normalizeDate(originalValue);
+
+    // تاریخ حداکثر ۱۰ کاراکتر
+    const nextValue = normalized.value.slice(0, 10);
+
+    if (nextValue !== originalValue) {
+        // تعداد کاراکترهای حذف‌شده قبل از مکان‌نما
+        const normalizedCursor = normalizeDate(
+            originalValue.slice(0, cursorPosition)
+        ).value.slice(0, 10).length;
+
+        element.value = nextValue;
+
+        try {
+            element.setSelectionRange(
+                normalizedCursor,
+                normalizedCursor
+            );
+        } catch (_) {}
+    }
+
+    if (normalized.invalid) {
+        showError(element, "لطفاً فقط عدد و / وارد کنید.");
+        return;
+    }
+
+    if (element.value.length < 10) {
+        hideError(element);
+        return;
+    }
+
+    const result = mode === "fa-date"
+        ? validateJalaliDate(element.value)
+        : validateGregorianDate(element.value);
+
+    if (!result.valid) {
+        showError(
+            element,
+            "تاریخ وارد شده معتبر نیست یا خارج از محدوده مجاز است."
+        );
+    } else {
+        hideError(element);
+    }
+
+    return;
+}
 
         const maxLength = getMaxLength(element);
 
-        if (maxLength === null && [...element.classList].some(
-            name => /^len-\d+$/.test(name)
-        )) {
+        // Invalid multiple length classes
+        if (maxLength === null && hasLengthClass(element)) {
             return;
         }
 
@@ -251,13 +445,13 @@
         const normalizedPrefix = normalize(
             prefix,
             mode,
-            maxLength
+            null
         ).value;
 
         const normalizedSelection = normalize(
             selected,
             mode,
-            maxLength
+            null
         ).value;
 
         if (normalized.value !== oldValue) {
@@ -272,10 +466,11 @@
 
             try {
                 element.setSelectionRange(newStart, newEnd);
-            } catch (_) {}
+            } catch (_) {
+                // Some input types do not support selection ranges.
+            }
         }
 
-        // Error handling
         if (normalized.tooLong) {
             showError(element, messages.length);
         } else if (normalized.invalid) {
@@ -285,99 +480,127 @@
         }
     }
 
-    function handleBeforeInput(event) {
-        const element = event.target;
+    // -----------------------------
+    // Event handlers
+    // -----------------------------
 
-        if (!isSupported(element)) return;
-
-        const maxLength = getMaxLength(element);
-
-        if (maxLength === null) return;
-
-        // Deletion must always be allowed
-        if (event.inputType.startsWith("delete")) return;
-
-        // Let composition finish; validate afterward
-        if (event.isComposing) return;
-
-        const start = element.selectionStart ?? element.value.length;
-        const end = element.selectionEnd ?? element.value.length;
-
-        const selectedLength = Array.from(
-            element.value.slice(start, end)
-        ).length;
-
-        const currentLength = Array.from(element.value).length;
-
-        const insertedLength = Array.from(
-            event.data || ""
-        ).length;
-
-        const nextLength =
-            currentLength - selectedLength + insertedLength;
-
-        if (nextLength > maxLength) {
-            event.preventDefault();
-
-            showError(element, messages.length);
-        }
-    }
-    document.addEventListener(
-    "beforeinput",
-    handleBeforeInput
-    );
-    document.addEventListener("input", function (event) {
+function handleBeforeInput(event) {
     const element = event.target;
 
     if (!isSupported(element)) return;
-    if (element.isComposing) return;
+    if (event.isComposing) return;
 
-    apply(element);
-    });
+    const mode = getMode(element);
+
+    // حذف و Undo/Redo را مسدود نکن
+    if (
+        event.inputType.startsWith("delete") ||
+        event.inputType === "historyUndo" ||
+        event.inputType === "historyRedo"
+    ) {
+        return;
+    }
+
+    if (event.data === null) return;
+
+    const isDateMode = mode === "fa-date" || mode === "en-date";
+
+    // اعتبارسنجی کاراکترهای ورودی
+    const normalized = isDateMode
+        ? normalizeDate(event.data)
+        : normalize(event.data, mode, null);
+
+    if (normalized.invalid) {
+        event.preventDefault();
+
+        showError(
+            element,
+            isDateMode
+                ? "لطفاً فقط عدد و / وارد کنید."
+                : getMessage(mode)
+        );
+
+        return;
+    }
+
+    const start = element.selectionStart ?? element.value.length;
+    const end = element.selectionEnd ?? start;
+
+    const currentLength = Array.from(element.value).length;
+    const selectedLength = Array.from(
+        element.value.slice(start, end)
+    ).length;
+
+    const insertedLength = Array.from(normalized.value).length;
+
+    const maxLength = isDateMode ? 10 : getMaxLength(element);
+
+    if (maxLength !== null) {
+        const resultingLength =
+            currentLength - selectedLength + insertedLength;
+
+        if (resultingLength > maxLength) {
+            event.preventDefault();
+            showError(element, getMessage("length"));
+        }
+    }
+}
+    function handleInput(event) {
+        const element = event.target;
+
+        if (!isSupported(element)) return;
+        if (element.isComposing) return;
+
+        apply(element);
+    }
+
+    function handleCompositionEnd(event) {
+        const element = event.target;
+
+        if (isSupported(element)) {
+            apply(element);
+        }
+    }
+
     // -----------------------------
     // Event listeners
     // -----------------------------
 
-    function isSupported(element) {
-        return (
-            element instanceof HTMLInputElement ||
-            element instanceof HTMLTextAreaElement
-        ) && getMode(element) !== null;
+    let listenersAttached = false;
+
+    function attachListeners() {
+        if (listenersAttached) return;
+
+        document.addEventListener("beforeinput", handleBeforeInput);
+        document.addEventListener("input", handleInput);
+        document.addEventListener("compositionend", handleCompositionEnd);
+
+        listenersAttached = true;
     }
 
-    document.addEventListener("input", function (event) {
+    function detachListeners() {
+        if (!listenersAttached) return;
 
-        const element = event.target;
+        document.removeEventListener("beforeinput", handleBeforeInput);
+        document.removeEventListener("input", handleInput);
+        document.removeEventListener("compositionend", handleCompositionEnd);
 
-        if (!isSupported(element)) return;
-
-        if (element.isComposing) return;
-
-        apply(element);
-    });
-
-    document.addEventListener("compositionend", function (event) {
-        if (isSupported(event.target)) {
-            apply(event.target);
-        }
-    });
+        listenersAttached = false;
+    }
 
     // -----------------------------
     // Public API
     // -----------------------------
 
     ForceInput.init = function (root = document) {
+        attachListeners();
 
-        if (
-            root.matches &&
-            root.matches("input, textarea")
-        ) {
+        if (isInputElement(root)) {
             apply(root);
         }
 
         if (root.querySelectorAll) {
-            root.querySelectorAll("input, textarea")
-                .forEach(apply);
+            root.querySelectorAll("input, textarea").forEach(apply);
         }
 
         return ForceInput;
@@ -385,8 +608,85 @@
 
     ForceInput.apply = apply;
 
-    ForceInput.config = function (options = {}) {
+    ForceInput.refresh = function (root = document) {
+        if (isInputElement(root)) {
+            apply(root);
+        }
 
+        if (root.querySelectorAll) {
+            root.querySelectorAll("input, textarea").forEach(apply);
+        }
+
+        return ForceInput;
+    };
+
+    ForceInput.validate = function (element) {
+        if (!isSupported(element)) {
+            return {
+                valid: true,
+                message: null
+            };
+        }
+
+        const mode = getMode(element);
+
+        if (mode === "fa-date" || mode === "en-date") {
+            const result = mode === "fa-date"
+                ? validateJalaliDate(element.value)
+                : validateGregorianDate(element.value);
+
+            if (!result.complete) {
+                return {
+                    valid: false,
+                    message: "تاریخ کامل وارد نشده است."
+                };
+            }
+
+            return {
+                valid: result.valid,
+                message: result.valid
+                    ? null
+                    : "تاریخ وارد شده معتبر نیست یا خارج از محدوده مجاز است."
+            };
+        }
+
+        const maxLength = getMaxLength(element);
+        const result = normalize(element.value, mode, maxLength);
+
+        return {
+            valid: !result.invalid &&
+                !result.tooLong &&
+                result.value === element.value,
+
+            message: result.invalid
+                ? getMessage(mode)
+                : result.tooLong
+                    ? messages.length
+                    : null
+        };
+    };
+
+    ForceInput.getValue = function (element) {
+        if (!isSupported(element)) {
+            return null;
+        }
+
+        const mode = getMode(element);
+
+        if (mode === "fa-date" || mode === "en-date") {
+            return normalizeDate(element.value).value.slice(0, 10);
+        }
+
+        const maxLength = getMaxLength(element);
+
+        return normalize(
+            element.value,
+            mode,
+            maxLength
+        ).value;
+    };
+
+    ForceInput.config = function (options = {}) {
         if (options.messages) {
             messages = {
                 ...messages,
@@ -397,58 +697,49 @@
         return ForceInput;
     };
 
-function handleBeforeInput(event) {
-    const element = event.target;
+    ForceInput.destroy = function () {
+        detachListeners();
 
-    if (!isSupported(element)) return;
+        document.querySelectorAll("[data-force-error]").forEach((element) => {
+            element.remove();
+        });
 
-    if (event.isComposing) return;
-
-    const mode = getMode(element);
-    const maxLength = getMaxLength(element);
-
-    if (event.inputType.startsWith("delete")) return;
-
-    if (event.inputType === "historyUndo" ||
-        event.inputType === "historyRedo") return;
-
-    if (event.data === null) return;
-
-    const normalized = normalize(event.data, mode, null);
-
-    // Reject invalid characters before insertion
-    if (normalized.invalid) {
-        event.preventDefault();
-        showError(element, getMessage(mode));
-        return;
-    }
-
-    const start = element.selectionStart ?? element.value.length;
-    const end = element.selectionEnd ?? element.value.length;
-
-    const currentLength = Array.from(element.value).length;
-    const selectedLength = Array.from(
-        element.value.slice(start, end)
-    ).length;
-
-    const insertedLength = Array.from(
-        normalized.value
-    ).length;
-
-    if (
-        maxLength !== null &&
-        currentLength - selectedLength + insertedLength > maxLength
-    ) {
-        event.preventDefault();
-        showError(element, messages.length);
-    }
-}
+        return ForceInput;
+    };
 
     ForceInput.toEnglishDigits = toEnglishDigits;
 
+    // -----------------------------
+    // Initial setup
+    // -----------------------------
+
+    console.log(
+    "Jalali valid:",
+    validateJalaliDate("1405/08/17")
+);
+
+console.log(
+    "Jalali invalid:",
+    validateJalaliDate("1404/12/30")
+);
+
+console.log(
+    "Gregorian valid:",
+    validateGregorianDate("2024/02/29")
+);
+
+console.log(
+    "Gregorian invalid:",
+    validateGregorianDate("2023/02/29")
+);
+
+console.log(
+    "Gregorian below minimum:",
+    validateGregorianDate("1899/12/31")
+);
+
     window.ForceInput = ForceInput;
 
-    // Initial setup
     ForceInput.init();
 
 })(window, document);

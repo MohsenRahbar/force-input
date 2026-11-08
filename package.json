@@ -1,8 +1,7 @@
-
 {
   "name": "force-input",
   "version": "1.0.0",
-  "description": "Lightweight JavaScript input validation and formatting library",
+  "description": "Lightweight JavaScript input validation and normalization for Persian, English, numeric, and date inputs",
   "main": "dist/force-input.js",
   "unpkg": "dist/force-input.min.js",
   "jsdelivr": "dist/force-input.min.js",
@@ -17,5 +16,8 @@
   "devDependencies": {
     "esbuild": "^0.25.0"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "jalaali-js": "^2.0.1"
+  }
 }
