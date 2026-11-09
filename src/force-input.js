@@ -258,7 +258,7 @@ function isPossibleDateInput(value, mode) {
 
     // Allow valid first digit while typing
     if (day.length === 1) {
-        return d <= 3;
+        return d >= 1 && d <= Math.min(3, maxDay);
     }
 
     return d >= 1 && d <= maxDay;
