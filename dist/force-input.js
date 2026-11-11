@@ -28,6 +28,9 @@
     if (gyOrDate instanceof Date) return d2j(g2d(gyOrDate.getFullYear(), gyOrDate.getMonth() + 1, gyOrDate.getDate()));
     return d2j(g2d(gyOrDate, gm, gd));
   }
+  function toGregorian(jy, jm, jd) {
+    return d2g(j2d(jy, jm, jd));
+  }
   function isValidJalaaliDate(jy, jm, jd) {
     return jy >= MIN_JALAALI_YEAR && jy <= MAX_JALAALI_YEAR && jm >= 1 && jm <= 12 && jd >= 1 && jd <= jalaaliMonthLength(jy, jm);
   }
@@ -159,6 +162,298 @@
     const ForceInput = {};
     const isValidJalaaliDate2 = isValidJalaaliDate;
     const toJalaali2 = toJalaali;
+    function injectCalendarStyles() {
+      if (document2.getElementById("force-input-calendar-styles")) {
+        return;
+      }
+      const style = document2.createElement("style");
+      style.id = "force-input-calendar-styles";
+      style.textContent = `
+            .force-date-wrapper {
+                position: relative;
+                display: flex;
+                align-items: center;
+                width: 100%;
+                min-width: 0;
+            }
+
+            .force-date-wrapper > input {
+                flex: 1;
+                min-width: 0;
+            }
+
+            .force-calendar-trigger {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                flex: 0 0 auto;
+                width: 38px;
+                height: 38px;
+                margin-inline-start: 6px;
+                padding: 0;
+                border: 1px solid #ccc;
+                border-radius: 6px;
+                background: #fff;
+                color: #444;
+                cursor: pointer;
+            }
+
+            .force-calendar-trigger:hover {
+                background: #f3f4f6;
+            }
+
+            .force-calendar-trigger svg {
+                display: block;
+            }
+
+            .force-calendar-popover {
+                position: absolute;
+                top: calc(100% + 8px);
+                inset-inline-start: 0;
+                z-index: 9999;
+                width: 310px;
+                padding: 12px;
+                border: 1px solid #ddd;
+                border-radius: 10px;
+                background: #fff;
+                color: #222;
+                box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+                box-sizing: border-box;
+                font-family: inherit;
+            }
+
+            .force-calendar-popover[hidden] {
+                display: none;
+            }
+
+            .force-calendar-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 4px;
+                margin-bottom: 12px;
+                width: 100%;
+                box-sizing: border-box;
+            }
+
+            .force-calendar-header > button[data-calendar-action] {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                flex: 0 0 25px;
+                width: 25px;
+                height: 32px;
+                padding: 0;
+                border: 1px solid #ddd;
+                border-radius: 5px;
+                background: #fff;
+                color: #222;
+                font-size: 17px;
+                cursor: pointer;
+            }
+
+            .force-calendar-header > button[data-calendar-action]:hover {
+                background: #f3f4f6;
+            }
+
+            .force-calendar-header button:hover {
+                background: #f3f4f6;
+            }
+
+            .force-calendar-month {
+                flex: 1;
+                min-width: 0;
+                height: 32px;
+                padding: 0 4px;
+                border: 1px solid #ddd;
+                border-radius: 5px;
+                background: #fff;
+                font: inherit;
+            }
+            .force-calendar-month-picker {
+                position: relative;
+                flex: 1 1 auto;
+                min-width: 75px;
+            }
+
+            .force-calendar-month-trigger {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 7px;
+                width: 100%;
+                height: 36px;
+                padding: 0 8px;
+                border: 1px solid #ddd;
+                border-radius: 6px;
+                background: #fff;
+                color: #222;
+                font: inherit;
+                font-size: 13px;
+                cursor: pointer;
+                white-space: nowrap;
+            }
+
+            .force-calendar-month-trigger:hover {
+                background: #f3f4f6;
+            }
+
+            .force-calendar-month-arrow {
+                font-size: 11px;
+                color: #777;
+                transition: transform 0.2s ease;
+            }
+
+            .force-calendar-month-picker.is-open
+            .force-calendar-month-arrow {
+                transform: rotate(180deg);
+            }
+
+            .force-calendar-month-menu {
+                position: absolute;
+                bottom: calc(100% + 5px);
+                top: auto;
+                inset-inline-start: 0;
+                z-index: 10001;
+
+                width: 100%;
+                min-width: 115px;
+                max-height: 220px;
+                overflow-y: auto;
+
+                padding: 5px;
+                border: 1px solid #ddd;
+                border-radius: 7px;
+                background: #fff;
+                box-shadow: 0 5px 16px rgba(0, 0, 0, 0.14);
+                box-sizing: border-box;
+            }
+
+            .force-calendar-month-menu[hidden] {
+                display: none;
+            }
+
+            .force-calendar-month-option {
+                display: block;
+                width: 100%;
+                min-height: 34px;
+                padding: 7px 10px;
+                border: 0;
+                border-radius: 5px;
+                background: transparent;
+                color: #333;
+                text-align: center;
+                font: inherit;
+                font-size: 13px;
+                cursor: pointer;
+                box-sizing: border-box;
+            }
+
+            .force-calendar-month-option:hover:not(:disabled) {
+                background: #f0f2f5;
+            }
+
+            .force-calendar-month-option.active {
+                background: #e8eefc;
+                color: #2455a4;
+                font-weight: 700;
+            }
+
+            .force-calendar-month-option:disabled {
+                color: #bbb;
+                cursor: not-allowed;
+                opacity: 0.5;
+            }
+
+            .force-calendar-month-option:hover {
+                background: #f0f2f5;
+            }
+
+            .force-calendar-month-option.active {
+                background: #e8eefc;
+                color: #2455a4;
+                font-weight: 700;
+            }
+            .force-calendar-month-option:disabled {
+                color: #bbb;
+                cursor: not-allowed;
+                opacity: 0.5;
+            }
+
+            .force-calendar-year {
+                flex: 0 0 76px;
+                width: 76px;
+                min-width: 76px;
+                height: 36px;
+                padding: 0 3px;
+                border: 1px solid #ddd;
+                border-radius: 6px;
+                box-sizing: border-box;
+                text-align: center;
+                font-size: 16px;
+                font-weight: 700;
+            }
+
+            .force-calendar-year {
+                flex: 0 0 82px;
+                width: 82px;
+                min-width: 82px;
+                height: 32px;
+                padding: 0 4px;
+                border: 1px solid #ddd;
+                border-radius: 5px;
+                box-sizing: border-box;
+                text-align: center;
+                font: inherit;
+            }
+
+            .force-calendar-grid {
+                display: grid;
+                grid-template-columns: repeat(7, minmax(0, 1fr));
+                gap: 4px;
+                text-align: center;
+            }
+
+            .force-calendar-weekday,
+            .force-calendar-empty,
+            .force-calendar-day {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-width: 0;
+                height: 34px;
+                box-sizing: border-box;
+            }
+
+            .force-calendar-weekday {
+                color: #666;
+                font-size: 12px;
+                font-weight: 600;
+            }
+
+            .force-calendar-day {
+                width: 100%;
+                padding: 0;
+                border: 0;
+                border-radius: 6px;
+                background: transparent;
+                color: #222;
+                font: inherit;
+                cursor: pointer;
+            }
+
+            .force-calendar-day:hover:not(:disabled) {
+                background: #e8eefc;
+            }
+
+            .force-calendar-day:disabled {
+                color: #bbb;
+                cursor: not-allowed;
+                opacity: 0.5;
+            }
+        `;
+      (document2.head || document2.documentElement).appendChild(style);
+    }
     const DEFAULT_MESSAGES = {
       fa: "\u0644\u0637\u0641\u0627\u064B \u0641\u0642\u0637 \u062D\u0631\u0648\u0641 \u0641\u0627\u0631\u0633\u06CC \u0648\u0627\u0631\u062F \u06A9\u0646\u06CC\u062F.",
       en: "\u0644\u0637\u0641\u0627\u064B \u0641\u0642\u0637 \u062D\u0631\u0648\u0641 \u0627\u0646\u06AF\u0644\u06CC\u0633\u06CC \u0648\u0627\u0631\u062F \u06A9\u0646\u06CC\u062F.",
@@ -201,6 +496,155 @@
       "fa-letter-force-res",
       "en-letter-force-res"
     ];
+    const CALENDAR_MONTHS = {
+      "fa-date": [
+        "\u0641\u0631\u0648\u0631\u062F\u06CC\u0646",
+        "\u0627\u0631\u062F\u06CC\u0628\u0647\u0634\u062A",
+        "\u062E\u0631\u062F\u0627\u062F",
+        "\u062A\u06CC\u0631",
+        "\u0645\u0631\u062F\u0627\u062F",
+        "\u0634\u0647\u0631\u06CC\u0648\u0631",
+        "\u0645\u0647\u0631",
+        "\u0622\u0628\u0627\u0646",
+        "\u0622\u0630\u0631",
+        "\u062F\u06CC",
+        "\u0628\u0647\u0645\u0646",
+        "\u0627\u0633\u0641\u0646\u062F"
+      ],
+      "en-date": [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December"
+      ]
+    };
+    function getInitialCalendarDate(input, mode) {
+      const validation = mode === "fa-date" ? validateJalaliDate(input.value) : validateGregorianDate(input.value);
+      if (validation.valid) {
+        const [year, month] = input.value.split("/").map(Number);
+        return { year, month };
+      }
+      const today = /* @__PURE__ */ new Date();
+      if (mode === "fa-date") {
+        const date = toJalaali2(
+          today.getFullYear(),
+          today.getMonth() + 1,
+          today.getDate()
+        );
+        return {
+          year: date.jy,
+          month: date.jm
+        };
+      }
+      return {
+        year: today.getFullYear(),
+        month: today.getMonth() + 1
+      };
+    }
+    function getCalendarMonthInfo(year, month, mode) {
+      if (mode === "fa-date") {
+        const daysInMonth = jalaaliMonthLength(year, month);
+        const firstDay = toGregorian(year, month, 1);
+        const weekday = new Date(
+          firstDay.gy,
+          firstDay.gm - 1,
+          firstDay.gd
+        ).getDay();
+        return {
+          daysInMonth,
+          startOffset: (weekday + 1) % 7
+        };
+      }
+      return {
+        daysInMonth: new Date(year, month, 0).getDate(),
+        startOffset: new Date(year, month - 1, 1).getDay()
+      };
+    }
+    function isCalendarDayAllowed(year, month, day, mode) {
+      if (mode === "fa-date") {
+        if (!isValidJalaaliDate2(year, month, day)) {
+          return false;
+        }
+        if (year < 1278 || year === 1278 && month < 10 || year === 1278 && month === 10 && day < 11) {
+          return false;
+        }
+        return true;
+      }
+      const date = new Date(year, month - 1, day);
+      if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
+        return false;
+      }
+      return year >= 1900;
+    }
+    function renderCalendarDays(input, popover) {
+      const mode = getMode(input);
+      const isJalali = mode === "fa-date";
+      const state = popover._calendarState;
+      if (!state) return;
+      const weekdays = isJalali ? ["\u0634", "\u06CC", "\u062F", "\u0633", "\u0686", "\u067E", "\u062C"] : ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+      const { daysInMonth, startOffset } = getCalendarMonthInfo(
+        state.year,
+        state.month,
+        mode
+      );
+      const grid = document2.createElement("div");
+      grid.className = "force-calendar-grid";
+      weekdays.forEach((day) => {
+        const cell = document2.createElement("div");
+        cell.className = "force-calendar-weekday";
+        cell.textContent = day;
+        grid.appendChild(cell);
+      });
+      for (let i = 0; i < startOffset; i++) {
+        const empty = document2.createElement("div");
+        empty.className = "force-calendar-empty";
+        grid.appendChild(empty);
+      }
+      for (let day = 1; day <= daysInMonth; day++) {
+        const button = document2.createElement("button");
+        button.type = "button";
+        button.className = "force-calendar-day";
+        button.textContent = day;
+        const allowed = isCalendarDayAllowed(
+          state.year,
+          state.month,
+          day,
+          mode
+        );
+        button.disabled = !allowed;
+        button.addEventListener("click", () => {
+          if (!allowed) return;
+          const year = String(state.year).padStart(4, "0");
+          const month = String(state.month).padStart(2, "0");
+          const selectedDay = String(day).padStart(2, "0");
+          input.value = `${year}/${month}/${selectedDay}`;
+          input.dispatchEvent(
+            new Event("input", { bubbles: true })
+          );
+          input.dispatchEvent(
+            new Event("change", { bubbles: true })
+          );
+          popover.hidden = true;
+          const wrapper = input.closest(".force-date-wrapper");
+          const trigger = wrapper == null ? void 0 : wrapper.querySelector(
+            ".force-calendar-trigger"
+          );
+          if (trigger) {
+            trigger.setAttribute("aria-expanded", "false");
+          }
+        });
+        grid.appendChild(button);
+      }
+      popover.appendChild(grid);
+    }
     function getMode(element) {
       const found = MODES.filter(
         (mode) => element.classList.contains(mode)
@@ -291,8 +735,8 @@
       if (year.length > 4 || month.length > 2 || day.length > 2) {
         return false;
       }
-      if (month.length === 1 && Number(month) > 1) {
-        return false;
+      if (month.length === 1) {
+        if (!/^[0-9]$/.test(month)) return false;
       }
       if (month.length === 2) {
         const m2 = Number(month);
@@ -450,8 +894,291 @@
         error.style.display = "none";
       }
     }
+    function createDateWrapper(input) {
+      var _a;
+      if ((_a = input.parentElement) == null ? void 0 : _a.classList.contains("force-date-wrapper")) {
+        return input.parentElement;
+      }
+      const wrapper = document2.createElement("div");
+      wrapper.className = "force-date-wrapper";
+      input.parentNode.insertBefore(wrapper, input);
+      wrapper.appendChild(input);
+      return wrapper;
+    }
+    function createCalendarPopover(wrapper) {
+      let popover = wrapper.querySelector(
+        ".force-calendar-popover"
+      );
+      if (popover) {
+        return popover;
+      }
+      const input = wrapper.querySelector("input");
+      const mode = getMode(input);
+      const initialDate = getInitialCalendarDate(input, mode);
+      popover = document2.createElement("div");
+      popover.className = "force-calendar-popover";
+      popover.hidden = true;
+      popover.setAttribute("role", "dialog");
+      popover.setAttribute("aria-label", "Calendar");
+      popover.dataset.year = String(initialDate.year);
+      popover.dataset.month = String(initialDate.month);
+      wrapper.appendChild(popover);
+      renderCalendarHeader(popover, input);
+      return popover;
+    }
+    function createCalendarButton(wrapper) {
+      let button = wrapper.querySelector(".force-calendar-trigger");
+      if (button) {
+        return button;
+      }
+      button = document2.createElement("button");
+      button.type = "button";
+      button.className = "force-calendar-trigger";
+      button.setAttribute("aria-label", "Open calendar");
+      button.setAttribute("aria-haspopup", "dialog");
+      button.setAttribute("aria-expanded", "false");
+      button.innerHTML = `
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+            >
+                <rect x="3" y="4" width="18" height="18" rx="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/>
+                <line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+        `;
+      button.addEventListener("click", () => {
+        const popover = createCalendarPopover(wrapper);
+        const isOpen = !popover.hidden;
+        if (!isOpen) {
+          const input = wrapper.querySelector("input");
+          renderCalendarHeader(input, popover);
+        }
+        popover.hidden = isOpen;
+        button.setAttribute("aria-expanded", String(!isOpen));
+      });
+      wrapper.appendChild(button);
+      return button;
+    }
+    const PERSIAN_MONTHS = [
+      "\u0641\u0631\u0648\u0631\u062F\u06CC\u0646",
+      "\u0627\u0631\u062F\u06CC\u0628\u0647\u0634\u062A",
+      "\u062E\u0631\u062F\u0627\u062F",
+      "\u062A\u06CC\u0631",
+      "\u0645\u0631\u062F\u0627\u062F",
+      "\u0634\u0647\u0631\u06CC\u0648\u0631",
+      "\u0645\u0647\u0631",
+      "\u0622\u0628\u0627\u0646",
+      "\u0622\u0630\u0631",
+      "\u062F\u06CC",
+      "\u0628\u0647\u0645\u0646",
+      "\u0627\u0633\u0641\u0646\u062F"
+    ];
+    const ENGLISH_MONTHS = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December"
+    ];
+    function getCalendarInitialDate(input, mode) {
+      const today = /* @__PURE__ */ new Date();
+      let year;
+      let month;
+      const match = /^(\d{4})\/(\d{2})\/(\d{2})$/.exec(input.value);
+      if (match) {
+        year = Number(match[1]);
+        month = Number(match[2]);
+        if (month >= 1 && month <= 12) {
+          return { year, month };
+        }
+      }
+      if (mode === "fa-date") {
+        const jalaliToday = toJalaali2(today);
+        return {
+          year: jalaliToday.jy,
+          month: jalaliToday.jm
+        };
+      }
+      return {
+        year: today.getFullYear(),
+        month: today.getMonth() + 1
+      };
+    }
+    function isBeforeMinimumDate(year, month, mode) {
+      if (mode === "fa-date") {
+        return year < 1278 || year === 1278 && month < 10;
+      }
+      return year < 1900;
+    }
+    function renderCalendarHeader(input, popover) {
+      const mode = getMode(input);
+      const isJalali = mode === "fa-date";
+      const months = isJalali ? PERSIAN_MONTHS : ENGLISH_MONTHS;
+      const minYear = isJalali ? 1278 : 1900;
+      if (!popover._calendarState) {
+        popover._calendarState = getCalendarInitialDate(input, mode);
+      }
+      const state = popover._calendarState;
+      const monthOptions = months.map((month, index) => {
+        const monthNumber = index + 1;
+        const disabled = isBeforeMinimumDate(
+          state.year,
+          monthNumber,
+          mode
+        );
+        return `
+            <button
+                type="button"
+                class="force-calendar-month-option ${monthNumber === state.month ? "active" : ""}"
+                data-month="${monthNumber}"
+                ${disabled ? "disabled" : ""}
+            >${month}</button>
+        `;
+      }).join("");
+      popover.innerHTML = `
+        <div class="force-calendar-header" dir="${isJalali ? "rtl" : "ltr"}">
+
+            <button type="button"
+                data-calendar-action="prev-year"
+                aria-label="Previous year">\xAB</button>
+
+            <button type="button"
+                data-calendar-action="prev-month"
+                aria-label="Previous month">\u2039</button>
+
+            <div class="force-calendar-month-picker">
+
+                <button
+                    type="button"
+                    class="force-calendar-month-trigger"
+                    aria-expanded="false"
+                    aria-haspopup="true"
+                >
+                    <span>${months[state.month - 1]}</span>
+                    <span class="force-calendar-month-arrow">\u25BE</span>
+                </button>
+
+                <div class="force-calendar-month-menu" hidden>
+                    ${monthOptions}
+                </div>
+
+            </div>
+
+            <input
+                class="force-calendar-year"
+                type="number"
+                min="${minYear}"
+                step="1"
+                value="${state.year}"
+                aria-label="${isJalali ? "\u0633\u0627\u0644" : "Year"}"
+                title="${isJalali ? "\u0633\u0627\u0644 \u0631\u0627 \u0648\u0627\u0631\u062F \u06A9\u0646\u06CC\u062F" : "Enter year"}"
+            >
+
+            <button type="button"
+                data-calendar-action="next-month"
+                aria-label="Next month">\u203A</button>
+
+            <button type="button"
+                data-calendar-action="next-year"
+                aria-label="Next year">\xBB</button>
+
+        </div>
+    `;
+      const monthPicker = popover.querySelector(
+        ".force-calendar-month-picker"
+      );
+      const monthTrigger = popover.querySelector(
+        ".force-calendar-month-trigger"
+      );
+      const monthMenu = popover.querySelector(
+        ".force-calendar-month-menu"
+      );
+      monthTrigger.addEventListener("click", () => {
+        const isOpen = !monthMenu.hidden;
+        monthMenu.hidden = isOpen;
+        monthPicker.classList.toggle("is-open", !isOpen);
+        monthTrigger.setAttribute(
+          "aria-expanded",
+          String(!isOpen)
+        );
+      });
+      monthMenu.querySelectorAll("[data-month]").forEach((button) => {
+        button.addEventListener("click", () => {
+          state.month = Number(button.dataset.month);
+          renderCalendarHeader(input, popover);
+        });
+      });
+      const yearInput = popover.querySelector(
+        ".force-calendar-year"
+      );
+      yearInput.addEventListener("change", () => {
+        const year = Number(yearInput.value);
+        if (!Number.isInteger(year) || year < minYear) {
+          renderCalendarHeader(input, popover);
+          return;
+        }
+        state.year = year;
+        if (isBeforeMinimumDate(state.year, state.month, mode)) {
+          state.month = isJalali ? 10 : 1;
+        }
+        renderCalendarHeader(input, popover);
+      });
+      popover.querySelectorAll("[data-calendar-action]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const action = button.dataset.calendarAction;
+          if (action === "prev-year") {
+            state.year--;
+          } else if (action === "next-year") {
+            state.year++;
+          } else if (action === "prev-month") {
+            state.month--;
+            if (state.month < 1) {
+              state.month = 12;
+              state.year--;
+            }
+          } else if (action === "next-month") {
+            state.month++;
+            if (state.month > 12) {
+              state.month = 1;
+              state.year++;
+            }
+          }
+          if (isBeforeMinimumDate(state.year, state.month, mode)) {
+            state.year = minYear;
+            state.month = isJalali ? 10 : 1;
+          }
+          renderCalendarHeader(input, popover);
+        });
+      });
+      renderCalendarDays(input, popover);
+    }
+    function prepareDateInput(input) {
+      if (!isDateInput(input)) return;
+      const wrapper = createDateWrapper(input);
+      createCalendarButton(wrapper);
+    }
     function isInputElement(element) {
       return element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement;
+    }
+    function isDateInput(element) {
+      const mode = getMode(element);
+      return mode === "fa-date" || mode === "en-date";
     }
     function isSupported(element) {
       return isInputElement(element) && getMode(element) !== null;
@@ -461,14 +1188,10 @@
       if (!isInputElement(element)) {
         return;
       }
-      if (!isPossibleDateInput(element.value, mode)) {
-        showError(
-          element,
-          "\u0645\u0627\u0647 \u06CC\u0627 \u0631\u0648\u0632 \u0648\u0627\u0631\u062F \u0634\u062F\u0647 \u0645\u0639\u062A\u0628\u0631 \u0646\u06CC\u0633\u062A."
-        );
+      const mode = getMode(element);
+      if (!mode) {
         return;
       }
-      const mode = getMode(element);
       if (!mode) {
         return;
       }
@@ -579,10 +1302,20 @@
         const nextValue = element.value.slice(0, start2) + normalized.value + element.value.slice(end2);
         if (!isPossibleDateInput(nextValue, mode)) {
           event.preventDefault();
-          showError(
-            element,
-            "\u0645\u0627\u0647 \u06CC\u0627 \u0631\u0648\u0632 \u0648\u0627\u0631\u062F \u0634\u062F\u0647 \u0645\u0639\u062A\u0628\u0631 \u0646\u06CC\u0633\u062A."
-          );
+          const parts = nextValue.split("/");
+          const month = parts[1] || "";
+          const day = parts[2] || "";
+          if (day.length > 0 && month.length !== 2) {
+            showError(
+              element,
+              "\u0644\u0637\u0641\u0627\u064B \u062A\u0627\u0631\u06CC\u062E \u0631\u0627 \u0628\u0627 \u0641\u0631\u0645\u062A YYYY/MM/DD \u0648\u0627\u0631\u062F \u06A9\u0646\u06CC\u062F. \u0645\u062B\u0627\u0644: 1382/05/01"
+            );
+          } else {
+            showError(
+              element,
+              "\u0645\u0627\u0647 \u06CC\u0627 \u0631\u0648\u0632 \u0648\u0627\u0631\u062F \u0634\u062F\u0647 \u0645\u0639\u062A\u0628\u0631 \u0646\u06CC\u0633\u062A."
+            );
+          }
           return;
         }
       }
@@ -630,22 +1363,31 @@
       listenersAttached = false;
     }
     ForceInput.init = function(root = document2) {
+      injectCalendarStyles();
       attachListeners();
       if (isInputElement(root)) {
+        prepareDateInput(root);
         apply(root);
       }
       if (root.querySelectorAll) {
-        root.querySelectorAll("input, textarea").forEach(apply);
+        root.querySelectorAll("input, textarea").forEach((element) => {
+          prepareDateInput(element);
+          apply(element);
+        });
       }
       return ForceInput;
     };
     ForceInput.apply = apply;
     ForceInput.refresh = function(root = document2) {
       if (isInputElement(root)) {
+        prepareDateInput(root);
         apply(root);
       }
       if (root.querySelectorAll) {
-        root.querySelectorAll("input, textarea").forEach(apply);
+        root.querySelectorAll("input, textarea").forEach((element) => {
+          prepareDateInput(element);
+          apply(element);
+        });
       }
       return ForceInput;
     };
